@@ -4,7 +4,7 @@ set -e
 set -x
 
 exp_no=zscl
-GPU=5,6,7,4
+GPU=0
 dataset=(Aircraft Caltech101 CIFAR100 DTD EuroSAT Flowers Food MNIST OxfordPet StanfordCars SUN397)
 lr=(5e-5 1e-5 1e-5 1e-5 1e-5 1e-5 1e-5 5e-5 1e-5 1e-5 1e-5 1e-5)
 
