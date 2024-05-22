@@ -3,7 +3,7 @@ set -v
 set -e
 set -x
 exp_no=withFrozen_22experts_3000epoch
-GPU=0,1
+GPU=0
 dataset=(Aircraft Caltech101 CIFAR100 DTD EuroSAT Flowers Food MNIST OxfordPet StanfordCars SUN397)
 dataset_test=(Aircraft Aircraft Caltech101 CIFAR100 DTD EuroSAT Flowers Food MNIST OxfordPet StanfordCars SUN397)
 lr=(5e-3 1e-3 5e-3 1e-3 1e-4 1e-3 1e-3 1e-4 1e-3 1e-3 1e-3)
