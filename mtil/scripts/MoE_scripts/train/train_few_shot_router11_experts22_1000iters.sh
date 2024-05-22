@@ -21,7 +21,7 @@ model_ckpt_path=ckpt/exp_${exp_no}
 
 # train chooser of DDAS
 j=0
-CUDA_VISIBLE_DEVICES=${GPU} python -m src.main \
+CUDA_VISIBLE_DEVICES=${GPU} python -m src.main_moe \
     --train-mode=adapter \
     --train-dataset=${chooser_dataset[j]} \
     --iterations 1000 \
@@ -36,7 +36,7 @@ for ((i = 1; i < ${#chooser_dataset[@]}; i++)); do
     dataset_cur=${chooser_dataset[i]}
     dataset_pre=${chooser_dataset[i - 1]}
     # continue training
-    CUDA_VISIBLE_DEVICES=${GPU} python -m src.main \
+    CUDA_VISIBLE_DEVICES=${GPU} python -m src.main_moe \
         --train-mode=adapter \
         --train-dataset=${dataset_cur} \
         --ls 0.2 \
@@ -53,7 +53,7 @@ done
 
 # train MoE-Adapters
 j=0
-CUDA_VISIBLE_DEVICES=${GPU} python -m src.main \
+CUDA_VISIBLE_DEVICES=${GPU} python -m src.main_moe \
     --train-mode=adapter \
     --train-dataset=${dataset[j]} \
     --lr=${lr[j]} \
@@ -79,7 +79,7 @@ for ((i = 1; i < ${#dataset[@]}; i++)); do
     dataset_pre=${dataset[i - 1]}
 
     # continue training
-    CUDA_VISIBLE_DEVICES=${GPU} python -m src.main \
+    CUDA_VISIBLE_DEVICES=${GPU} python -m src.main_moe \
         --train-mode=adapter \
         --train-dataset=${dataset_cur} \
         --lr=${lr[i]} \
@@ -108,7 +108,7 @@ for ((j = 0; j < 11; j++)); do
   for ((i = 0; i < ${#dataset[@]}; i++)); do
     dataset_cur=${dataset[j]}
 
-    CUDA_VISIBLE_DEVICES=${GPU} python -m src.main --eval-only \
+    CUDA_VISIBLE_DEVICES=${GPU} python -m src.main_moe --eval-only \
         --train-mode=adapter \
         --eval-datasets=${dataset_cur} \
         --load ${model_ckpt_path}/${dataset[i]}.pth \

@@ -1,6 +1,6 @@
 import torchvision.models as models
 import torch.nn as nn
-import clip.clip as clip
+import clip_moe.clip as clip
 from torch.utils.data import DataLoader
 
 from .. import datasets, templates, utils

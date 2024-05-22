@@ -48,7 +48,7 @@ class CIFAR10:
     def __init__(
         self,
         preprocess,
-        location="./data",
+        location="/home/alicja/data",
         batch_size=128,
         num_workers=16,
         classnames=None,
@@ -109,7 +109,7 @@ class CIFAR101:
     def __init__(
         self,
         preprocess,
-        location=os.path.expanduser("~/data"),
+        location=os.path.expanduser("/home/alicja/data"),
         batch_size=128,
         num_workers=16,
         classnames=None,
@@ -202,7 +202,7 @@ class CIFAR100:
     def __init__(
         self,
         preprocess,
-        location="./data",
+        location="/home/alicja/data",
         batch_size=128,
         num_workers=16,
         classnames=None,

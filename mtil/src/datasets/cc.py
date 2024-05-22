@@ -9,7 +9,7 @@ from torch.utils.data import (
     SubsetRandomSampler,
     get_worker_info,
 )
-import clip.clip as clip
+import clip_moe.clip as clip
 
 
 class CsvDataset(Dataset):

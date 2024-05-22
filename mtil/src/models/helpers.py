@@ -1,7 +1,7 @@
 import copy
 import os
 
-import clip.clip as clip
+import clip_moe.clip as clip
 import torch
 import torch.nn.functional as F
 from tqdm import tqdm

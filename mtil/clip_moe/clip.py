@@ -10,8 +10,8 @@ import torch
 from torchvision.transforms import Compose, Resize, CenterCrop, ToTensor, Normalize, RandomResizedCrop, InterpolationMode
 from tqdm import tqdm
 
-from clip.model import build_model
-from clip.tokenizer import SimpleTokenizer as _Tokenizer
+from clip_moe.model import build_model
+from clip_moe.tokenizer import SimpleTokenizer as _Tokenizer
 
 __all__ = ["available_models", "load", "tokenize"]
 _tokenizer = _Tokenizer()

@@ -19,7 +19,7 @@ model_ckpt_path=ckpt/exp_${exp_no}
 
 ## train
 j=0
-CUDA_VISIBLE_DEVICES=${GPU} python -m src.main \
+CUDA_VISIBLE_DEVICES=${GPU} python -m src.main_moe \
     --train-mode=adapter \
     --train-dataset=${dataset[j]} \
     --lr=${lr[j]} \
@@ -43,7 +43,7 @@ for ((i = 1; i < ${#dataset[@]}; i++)); do
     dataset_pre=${dataset[i - 1]}
 
     # continue training
-    CUDA_VISIBLE_DEVICES=${GPU} python -m src.main \
+    CUDA_VISIBLE_DEVICES=${GPU} python -m src.main_moe \
         --train-mode=adapter \
         --train-dataset=${dataset_cur} \
         --lr=${lr[i]} \
@@ -71,7 +71,7 @@ for ((j = 1; j < 12; j++)); do
   for ((i = 1; i < ${#dataset_test[@]}; i++)); do
     dataset_cur=${dataset_test[j]}
 
-    CUDA_VISIBLE_DEVICES=${GPU} python -m src.main --eval-only \
+    CUDA_VISIBLE_DEVICES=${GPU} python -m src.main_moe --eval-only \
         --train-mode=adapter \
         --eval-datasets=${dataset_cur} \
         --load ${model_ckpt_path}/${dataset_test[i]}.pth \

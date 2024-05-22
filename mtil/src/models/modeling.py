@@ -1,4 +1,4 @@
-import clip.clip as clip
+import clip_moe.clip as clip
 import torch
 from tqdm import tqdm
 

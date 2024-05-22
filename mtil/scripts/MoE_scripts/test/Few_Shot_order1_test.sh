@@ -19,7 +19,7 @@ for ((j = 0; j < 11; j++)); do
   for ((i = 0; i < ${#dataset[@]}; i++)); do
     dataset_cur=${dataset[j]}
 
-    CUDA_VISIBLE_DEVICES=${GPU} python -m src.main --eval-only \
+    CUDA_VISIBLE_DEVICES=${GPU} python -m src.main_moe --eval-only \
         --train-mode=adapter \
         --eval-datasets=${dataset_cur} \
         --load ${model_ckpt_path}/${dataset[i]}.pth \
