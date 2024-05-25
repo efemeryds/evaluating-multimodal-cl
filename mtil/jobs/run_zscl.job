@@ -6,7 +6,7 @@
 #SBATCH --account=plgttaautopilot-gpu-a100
 #SBATCH --partition=plgrid-gpu-a100
 #SBATCH --cpus-per-task=16
-#SBATCH --mem=40G
+#SBATCH --mem=50G
 #SBATCH --gres=gpu
 #SBATCH -e /net/tscratch/people/plgalicjamonika/slurm/slurm.%N.%j.err # STDERR
 #SBATCH -o /net/tscratch/people/plgalicjamonika/slurm/slurm.%N.%j.out # STDOUT
