@@ -62,6 +62,8 @@ class Bottleneck(nn.Module):
 
         out += identity
         out = self.relu(out)
+
+        del identity, x
         print_memory_usage()
         gc.collect()
         return out
@@ -150,6 +152,7 @@ class ModifiedResNet(nn.Module):
 
     def forward(self, x):
         print("ModifiedResNet forward")
+
         def stem(x):
             for conv, bn in [(self.conv1, self.bn1), (self.conv2, self.bn2), (self.conv3, self.bn3)]:
                 x = self.relu(bn(conv(x)))
@@ -172,15 +175,22 @@ class LayerNorm(nn.LayerNorm):
     """Subclass torch's LayerNorm to handle fp16."""
 
     def forward(self, x: torch.Tensor):
+        print("LayerNorm forward")
         orig_type = x.dtype
         ret = super().forward(x.type(torch.float32))
+        print_memory_usage()
+        gc.collect()
         return ret.type(orig_type)
 
 
 class QuickGELU(nn.Module):
     def forward(self, x: torch.Tensor):
         print("QuickGELU forward")
-        return x * torch.sigmoid(1.702 * x)
+        output = x * torch.sigmoid(1.702 * x)
+        print_memory_usage()
+        del x
+        gc.collect()
+        return output
 
 
 class ResidualAttentionBlock(nn.Module):
@@ -219,6 +229,8 @@ class Transformer(nn.Module):
 
     def forward(self, x: torch.Tensor):
         print("Transformer forward")
+        print_memory_usage()
+        gc.collect()
         return self.resblocks(x)
 
 
@@ -246,6 +258,7 @@ class VisualTransformer(nn.Module):
         self.proj = nn.Parameter(scale * torch.randn(width, output_dim))
 
     def forward(self, x: torch.Tensor):
+
         print("VisualTransformer forward")
         x = self.conv1(x)  # shape = [*, width, grid, grid]
         x = x.reshape(x.shape[0], x.shape[1], -1)  # shape = [*, width, grid ** 2]
@@ -264,9 +277,12 @@ class VisualTransformer(nn.Module):
 
         if self.proj is not None:
             x = x @ self.proj
+
         print_memory_usage()
         gc.collect()
         return x
+
+
 
 
 class CLIP(nn.Module):
