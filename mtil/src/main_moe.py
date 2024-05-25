@@ -42,7 +42,7 @@ def main(args):
     assert args.train_mode in ["whole", "text", "image", "adapter"]
     if args.eval_only:  # 测试阶段
         # load clip model
-        model, _, val_preprocess = clip.load(args.model, jit=False, args=args)
+        model, _, val_preprocess = clip_moe.load(args.model, jit=False, args=args)
         if args.load:  #
             utils.torch_load(model, args.load)
         if args.load_autochooser and args.autorouter == True:
