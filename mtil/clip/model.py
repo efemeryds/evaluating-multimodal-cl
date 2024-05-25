@@ -18,6 +18,11 @@ def print_memory_usage():
     print(f"Memory usage: {memory_usage_mb:.2f} MB")
 
 
+def print_gpu_memory_usage():
+    print(f"Memory allocated: {torch.cuda.memory_allocated() / 1024 ** 3:.2f} GiB")
+    print(f"Max memory allocated: {torch.cuda.max_memory_allocated() / 1024 ** 3:.2f} GiB")
+
+
 class Bottleneck(nn.Module):
     expansion = 4
 
@@ -65,6 +70,7 @@ class Bottleneck(nn.Module):
 
         del identity, x
         print_memory_usage()
+        print_gpu_memory_usage
         gc.collect()
         return out
 
@@ -104,6 +110,7 @@ class AttentionPool2d(nn.Module):
             need_weights=False
         )
         print_memory_usage()
+        print_gpu_memory_usage
         gc.collect()
         return x[0]
 
@@ -167,6 +174,7 @@ class ModifiedResNet(nn.Module):
         x = self.layer4(x)
         x = self.attnpool(x)
         print_memory_usage()
+        print_gpu_memory_usage
         gc.collect()
         return x
 
@@ -179,6 +187,7 @@ class LayerNorm(nn.LayerNorm):
         orig_type = x.dtype
         ret = super().forward(x.type(torch.float32))
         print_memory_usage()
+        print_gpu_memory_usage
         gc.collect()
         return ret.type(orig_type)
 
@@ -189,6 +198,7 @@ class QuickGELU(nn.Module):
         print("x shape: ", x.shape)
         output = x * torch.sigmoid(1.702 * x)
         print_memory_usage()
+        print_gpu_memory_usage
         print()
         del x
         gc.collect()
@@ -218,6 +228,7 @@ class ResidualAttentionBlock(nn.Module):
         x = x + self.attention(self.ln_1(x))
         x = x + self.mlp(self.ln_2(x))
         print_memory_usage()
+        print_gpu_memory_usage
         gc.collect()
         return x
 
@@ -232,6 +243,7 @@ class Transformer(nn.Module):
     def forward(self, x: torch.Tensor):
         print("Transformer forward")
         print_memory_usage()
+        print_gpu_memory_usage
         gc.collect()
         return self.resblocks(x)
 
@@ -260,7 +272,6 @@ class VisualTransformer(nn.Module):
         self.proj = nn.Parameter(scale * torch.randn(width, output_dim))
 
     def forward(self, x: torch.Tensor):
-
         print("VisualTransformer forward")
         x = self.conv1(x)  # shape = [*, width, grid, grid]
         x = x.reshape(x.shape[0], x.shape[1], -1)  # shape = [*, width, grid ** 2]
@@ -281,10 +292,9 @@ class VisualTransformer(nn.Module):
             x = x @ self.proj
 
         print_memory_usage()
+        print_gpu_memory_usage
         gc.collect()
         return x
-
-
 
 
 class CLIP(nn.Module):
@@ -422,6 +432,7 @@ class CLIP(nn.Module):
         logits_per_image = logit_scale * image_features @ text_features.t()
         logits_per_text = logits_per_image.t()
         print_memory_usage()
+        print_gpu_memory_usage
         gc.collect()
         return logits_per_image, logits_per_text
 
