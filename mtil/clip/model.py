@@ -72,6 +72,7 @@ class Bottleneck(nn.Module):
         print_memory_usage()
         print_gpu_memory_usage
         gc.collect()
+        torch.cuda.empty_cache()
         return out
 
 
@@ -112,6 +113,7 @@ class AttentionPool2d(nn.Module):
         print_memory_usage()
         print_gpu_memory_usage()
         gc.collect()
+        torch.cuda.empty_cache()
         return x[0]
 
 
@@ -176,6 +178,7 @@ class ModifiedResNet(nn.Module):
         print_memory_usage()
         print_gpu_memory_usage()
         gc.collect()
+        torch.cuda.empty_cache()
         return x
 
 
@@ -189,6 +192,7 @@ class LayerNorm(nn.LayerNorm):
         print_memory_usage()
         print_gpu_memory_usage()
         gc.collect()
+        torch.cuda.empty_cache()
         return ret.type(orig_type)
 
 
@@ -202,6 +206,7 @@ class QuickGELU(nn.Module):
         print()
         del x
         gc.collect()
+        torch.cuda.empty_cache()
         return output
 
 
@@ -230,6 +235,7 @@ class ResidualAttentionBlock(nn.Module):
         print_memory_usage()
         print_gpu_memory_usage()
         gc.collect()
+        torch.cuda.empty_cache()
         return x
 
 
@@ -245,6 +251,7 @@ class Transformer(nn.Module):
         print_memory_usage()
         print_gpu_memory_usage()
         gc.collect()
+        torch.cuda.empty_cache()
         return self.resblocks(x)
 
 
@@ -294,6 +301,7 @@ class VisualTransformer(nn.Module):
         print_memory_usage()
         print_gpu_memory_usage()
         gc.collect()
+        torch.cuda.empty_cache()
         return x
 
 
@@ -434,6 +442,7 @@ class CLIP(nn.Module):
         print_memory_usage()
         print_gpu_memory_usage()
         gc.collect()
+        torch.cuda.empty_cache()
         return logits_per_image, logits_per_text
 
         # return image_features, text_features, self.logit_scale.exp()
