@@ -41,7 +41,7 @@ def get_nonempty_subset(dataset, split, frac=1.0, transform=None):
 class IWildCam:
     def __init__(self,
                  preprocess,
-                 location=os.path.expanduser('~/data'),
+                 location=os.path.expanduser("/net/tscratch/people/plgalicjamonika/data"),
                  remove_non_empty=False,
                  batch_size=128,
                  num_workers=16,

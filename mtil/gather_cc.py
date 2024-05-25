@@ -56,7 +56,7 @@ def grab(line):
         pass
 
 if __name__ == "__main__":
-    ROOT = "cc_data"
+    ROOT = "/net/tscratch/people/plgalicjamonika/data/cc_data"
 
     if not os.path.exists(ROOT):
         os.mkdir(ROOT)

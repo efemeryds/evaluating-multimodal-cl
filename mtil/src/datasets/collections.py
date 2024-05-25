@@ -16,7 +16,7 @@ class ClassificationDataset:
     def __init__(
         self,
         preprocess,
-        location=os.path.expanduser("home/alicja/data"),
+        location=os.path.expanduser("/net/tscratch/people/plgalicjamonika/data"),
         batch_size=128,
         batch_size_eval=None,
         num_workers=16,
