@@ -3,11 +3,19 @@ from typing import Tuple, Union
 
 import os
 import json
+import psutil
 import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import nn
 from torch.cuda.amp import autocast
+
+
+def print_memory_usage():
+    process = psutil.Process()
+    memory_info = process.memory_info()
+    memory_usage_mb = memory_info.rss / (1024 ** 2)
+    print(f"Memory usage: {memory_usage_mb:.2f} MB")
 
 
 class Bottleneck(nn.Module):
@@ -41,6 +49,7 @@ class Bottleneck(nn.Module):
             ]))
 
     def forward(self, x: torch.Tensor):
+        print("Bottleneck forward")
         identity = x
 
         out = self.relu(self.bn1(self.conv1(x)))
@@ -53,6 +62,7 @@ class Bottleneck(nn.Module):
 
         out += identity
         out = self.relu(out)
+        print_memory_usage()
         return out
 
 
@@ -67,6 +77,7 @@ class AttentionPool2d(nn.Module):
         self.num_heads = num_heads
 
     def forward(self, x):
+        print("AttentionPool2d forward")
         x = x.reshape(x.shape[0], x.shape[1], x.shape[2] * x.shape[3]).permute(2, 0, 1)  # NCHW -> (HW)NC
         x = torch.cat([x.mean(dim=0, keepdim=True), x], dim=0)  # (HW+1)NC
         x = x + self.positional_embedding[:, None, :].to(x.dtype)  # (HW+1)NC
@@ -89,7 +100,7 @@ class AttentionPool2d(nn.Module):
             training=self.training,
             need_weights=False
         )
-
+        print_memory_usage()
         return x[0]
 
 
@@ -136,6 +147,7 @@ class ModifiedResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
+        print("ModifiedResNet forward")
         def stem(x):
             for conv, bn in [(self.conv1, self.bn1), (self.conv2, self.bn2), (self.conv3, self.bn3)]:
                 x = self.relu(bn(conv(x)))
@@ -149,7 +161,7 @@ class ModifiedResNet(nn.Module):
         x = self.layer3(x)
         x = self.layer4(x)
         x = self.attnpool(x)
-
+        print_memory_usage()
         return x
 
 
@@ -164,8 +176,8 @@ class LayerNorm(nn.LayerNorm):
 
 class QuickGELU(nn.Module):
     def forward(self, x: torch.Tensor):
-        with autocast():
-            return x * torch.sigmoid(1.702 * x)
+        print("QuickGELU forward")
+        return x * torch.sigmoid(1.702 * x)
 
 
 class ResidualAttentionBlock(nn.Module):
@@ -187,8 +199,10 @@ class ResidualAttentionBlock(nn.Module):
         return self.attn(x, x, x, need_weights=False, attn_mask=self.attn_mask)[0]
 
     def forward(self, x: torch.Tensor):
+        print("ResidualAttentionBlock forward")
         x = x + self.attention(self.ln_1(x))
         x = x + self.mlp(self.ln_2(x))
+        print_memory_usage()
         return x
 
 
@@ -200,6 +214,7 @@ class Transformer(nn.Module):
         self.resblocks = nn.Sequential(*[ResidualAttentionBlock(width, heads, attn_mask) for _ in range(layers)])
 
     def forward(self, x: torch.Tensor):
+        print("Transformer forward")
         return self.resblocks(x)
 
 
@@ -227,6 +242,7 @@ class VisualTransformer(nn.Module):
         self.proj = nn.Parameter(scale * torch.randn(width, output_dim))
 
     def forward(self, x: torch.Tensor):
+        print("VisualTransformer forward")
         x = self.conv1(x)  # shape = [*, width, grid, grid]
         x = x.reshape(x.shape[0], x.shape[1], -1)  # shape = [*, width, grid ** 2]
         x = x.permute(0, 2, 1)  # shape = [*, grid ** 2, width]
@@ -244,7 +260,7 @@ class VisualTransformer(nn.Module):
 
         if self.proj is not None:
             x = x @ self.proj
-
+        print_memory_usage()
         return x
 
 
@@ -367,6 +383,7 @@ class CLIP(nn.Module):
         return x
 
     def forward(self, image, text):
+        print("CLIP forward")
         if image is None:
             return self.encode_text(text)
         elif text is None:
@@ -381,6 +398,7 @@ class CLIP(nn.Module):
         logit_scale = self.logit_scale.exp()
         logits_per_image = logit_scale * image_features @ text_features.t()
         logits_per_text = logits_per_image.t()
+        print_memory_usage()
         return logits_per_image, logits_per_text
 
         # return image_features, text_features, self.logit_scale.exp()
