@@ -1,6 +1,6 @@
 from collections import OrderedDict
 from typing import Tuple, Union
-
+import gc
 import os
 import json
 import psutil
@@ -63,6 +63,7 @@ class Bottleneck(nn.Module):
         out += identity
         out = self.relu(out)
         print_memory_usage()
+        gc.collect()
         return out
 
 
@@ -101,6 +102,7 @@ class AttentionPool2d(nn.Module):
             need_weights=False
         )
         print_memory_usage()
+        gc.collect()
         return x[0]
 
 
@@ -162,6 +164,7 @@ class ModifiedResNet(nn.Module):
         x = self.layer4(x)
         x = self.attnpool(x)
         print_memory_usage()
+        gc.collect()
         return x
 
 
@@ -203,6 +206,7 @@ class ResidualAttentionBlock(nn.Module):
         x = x + self.attention(self.ln_1(x))
         x = x + self.mlp(self.ln_2(x))
         print_memory_usage()
+        gc.collect()
         return x
 
 
@@ -261,6 +265,7 @@ class VisualTransformer(nn.Module):
         if self.proj is not None:
             x = x @ self.proj
         print_memory_usage()
+        gc.collect()
         return x
 
 
@@ -399,6 +404,7 @@ class CLIP(nn.Module):
         logits_per_image = logit_scale * image_features @ text_features.t()
         logits_per_text = logits_per_image.t()
         print_memory_usage()
+        gc.collect()
         return logits_per_image, logits_per_text
 
         # return image_features, text_features, self.logit_scale.exp()
