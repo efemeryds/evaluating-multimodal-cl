@@ -6,7 +6,7 @@ from tqdm import tqdm
 import numpy as np
 # from torchvision import datasets
 from . import datasets, utils
-import clip_moe.clip as clip
+import clip.clip as clip
 import numpy as np
 
 
