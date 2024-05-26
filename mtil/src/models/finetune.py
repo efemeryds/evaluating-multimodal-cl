@@ -10,6 +10,7 @@ from .. import datasets, templates, utils
 from .evaluation import evaluate, zeroshot_classifier
 from .helpers import get_datasets_text, merge_we, wise_we, moving_avg, l2_loss, virtual_vocab, distillation
 
+
 def finetune(args):
     model, train_preprocess, val_preprocess = clip.load(args.model, jit=False)
     if args.load is not None:
@@ -23,11 +24,11 @@ def finetune(args):
 
     if args.we or args.moving_avg or args.we_wise:
         print("Averaging training")
-        if args.moving_avg and args.mv_avg_model == "zeroshot": # mv+zeroshot
-            we_model, _, _ =  clip.load(args.model, jit=False)
+        if args.moving_avg and args.mv_avg_model == "zeroshot":  # mv+zeroshot
+            we_model, _, _ = clip.load(args.model, jit=False)
             we_model.cuda()
             we_n = 0
-        else: #we; mv+m; mv+t; we_wise
+        else:  # we; mv+m; mv+t; we_wise
             we_model = copy.deepcopy(model)
             we_model.cuda()
             we_n = 0
@@ -113,7 +114,7 @@ def finetune(args):
                 ref_model, _, test_preprocess = clip.load(args.model, jit=False)
                 for param_q, param_k in zip(ref_model.parameters(), model.module.parameters()):
                     param_q.data = param_q.data * (1 - args.ref_wise_alpha) + param_k.data * args.ref_wise_alpha
-            else:    
+            else:
                 print("[ref_model] Zero-shot")
                 ref_model, _, test_preprocess = clip.load(args.model, jit=False)
         else:
@@ -173,7 +174,7 @@ def finetune(args):
             ref_template = ref_dataset.template
             ref_texts = [ref_template(x) for x in ref_dataset.classnames]
             ref_texts = clip.tokenize(ref_texts).cuda()
-            
+
     if args.train_mode == "text":
         embeddings = zeroshot_classifier(dataset.classnames, dataset.templates, model)
 
@@ -275,11 +276,11 @@ def finetune(args):
             # -- final loss --
             if args.image_loss:
                 if args.weight_adjust:
-                    loss = loss + 0.5 * loss_ZSCL 
+                    loss = loss + 0.5 * loss_ZSCL
                 else:
-                    loss = loss + 1.0 * loss_ZSCL 
+                    loss = loss + 1.0 * loss_ZSCL
 
-            # transpose loss
+                    # transpose loss
             if args.text_loss:
                 logits_current_2 = logits_current.t()
                 logits_ref_2 = logits_ref.t()
@@ -288,7 +289,7 @@ def finetune(args):
                     loss += 0.5 * loss_ZSCL_2
                 else:
                     loss += loss_ZSCL_2
-            
+
             if args.ablation_loss_2:
                 logits_img_current = logit_scale.exp() * ref_out_current @ ref_out_current.t()
                 logits_img_ref = logit_scale.exp() * ref_out @ ref_out.t()
@@ -299,7 +300,6 @@ def finetune(args):
                     loss += 0.5 * loss_ZSCL_3
                 else:
                     loss += loss_ZSCL_3
-
 
         # update
         optimizer.zero_grad()
@@ -314,7 +314,7 @@ def finetune(args):
                     next_we_model = copy.deepcopy(model.module)
                     moving_avg(model.module, we_model, args.mv_avg_decay)
                     we_model = next_we_model.cuda()
-                else: ### args.moving_avg_model == "n" or "zeroshot"
+                else:  ### args.moving_avg_model == "n" or "zeroshot"
                     moving_avg(model.module, we_model, args.mv_avg_decay)
             elif args.we:
                 merge_we(model.module, we_model, we_n)
@@ -332,14 +332,12 @@ def finetune(args):
     if args.wise_merge:
         alpha = args.wise_ft_alpha
         if args.wise_ft_model == "zeroshot":
-            wise_ft_model, _, _ =  clip.load(args.model, jit=False)
+            wise_ft_model, _, _ = clip.load(args.model, jit=False)
         else:
             wise_ft_model = copy.deepcopy(model_fix)
         wise_ft_model.cuda()
         for param_q, param_k in zip(model.module.parameters(), wise_ft_model.parameters()):
             param_q.data = param_q.data * alpha + param_k.data * (1 - alpha)
-
-
 
     # Saving model
     if args.save is not None:
