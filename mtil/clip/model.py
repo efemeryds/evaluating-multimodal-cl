@@ -70,7 +70,7 @@ class Bottleneck(nn.Module):
 
         del identity, x
         print_memory_usage()
-        print_gpu_memory_usage
+        print_gpu_memory_usage()
         gc.collect()
         torch.cuda.empty_cache()
         return out
@@ -226,11 +226,13 @@ class ResidualAttentionBlock(nn.Module):
 
     def attention(self, x: torch.Tensor):
         self.attn_mask = self.attn_mask.to(dtype=x.dtype, device=x.device) if self.attn_mask is not None else None
+        torch.cuda.empty_cache()
         return self.attn(x, x, x, need_weights=False, attn_mask=self.attn_mask)[0]
 
     def forward(self, x: torch.Tensor):
         print("ResidualAttentionBlock forward")
         x = x + self.attention(self.ln_1(x))
+        torch.cuda.empty_cache()
         x = x + self.mlp(self.ln_2(x))
         print_memory_usage()
         print_gpu_memory_usage()
@@ -288,11 +290,11 @@ class VisualTransformer(nn.Module):
              x], dim=1)  # shape = [*, grid ** 2 + 1, width]
         x = x + self.positional_embedding.to(x.dtype)
         x = self.ln_pre(x)
-
+        torch.cuda.empty_cache()
         x = x.permute(1, 0, 2)  # NLD -> LND
         x = self.transformer(x)
         x = x.permute(1, 0, 2)  # LND -> NLD
-
+        torch.cuda.empty_cache()
         x = self.ln_post(x[:, 0, :])
 
         if self.proj is not None:
@@ -380,7 +382,7 @@ class CLIP(nn.Module):
                 for name, param in resnet_block.named_parameters():
                     if name.endswith("bn3.weight"):
                         nn.init.zeros_(param)
-
+        torch.cuda.empty_cache()
         proj_std = (self.transformer.width ** -0.5) * ((2 * self.transformer.layers) ** -0.5)
         attn_std = self.transformer.width ** -0.5
         fc_std = (2 * self.transformer.width) ** -0.5
@@ -389,7 +391,7 @@ class CLIP(nn.Module):
             nn.init.normal_(block.attn.out_proj.weight, std=proj_std)
             nn.init.normal_(block.mlp.c_fc.weight, std=fc_std)
             nn.init.normal_(block.mlp.c_proj.weight, std=proj_std)
-
+        torch.cuda.empty_cache()
         if self.text_projection is not None:
             nn.init.normal_(self.text_projection, std=self.transformer.width ** -0.5)
 
@@ -399,6 +401,7 @@ class CLIP(nn.Module):
         mask = torch.empty(self.context_length, self.context_length)
         mask.fill_(float("-inf"))
         mask.triu_(1)  # zero out the lower diagonal
+        torch.cuda.empty_cache()
         return mask
 
     @property
@@ -420,7 +423,7 @@ class CLIP(nn.Module):
         # x.shape = [batch_size, n_ctx, transformer.width]
         # take features from the eot embedding (eot_token is the highest number in each sequence)
         x = x[torch.arange(x.shape[0]), text.argmax(dim=-1)] @ self.text_projection
-
+        torch.cuda.empty_cache()
         return x
 
     def forward(self, image, text):
@@ -431,10 +434,10 @@ class CLIP(nn.Module):
             return self.encode_image(image)
         image_features = self.encode_image(image)
         text_features = self.encode_text(text)
-
+        torch.cuda.empty_cache()
         image_features = image_features / image_features.norm(dim=-1, keepdim=True)
         text_features = text_features / text_features.norm(dim=-1, keepdim=True)
-
+        torch.cuda.empty_cache()
         # if self.baseline:
         logit_scale = self.logit_scale.exp()
         logits_per_image = logit_scale * image_features @ text_features.t()
@@ -469,6 +472,7 @@ def convert_weights(model: nn.Module):
                 if attr is not None:
                     attr.data = attr.data.half()
 
+    torch.cuda.empty_cache()
     model.apply(_convert_weights_to_fp16)
 
 
@@ -482,6 +486,7 @@ def build_model(state_dict: dict):
         vision_patch_size = state_dict["visual.conv1.weight"].shape[-1]
         grid_size = round((state_dict["visual.positional_embedding"].shape[0] - 1) ** 0.5)
         image_resolution = vision_patch_size * grid_size
+        torch.cuda.empty_cache()
     else:
         counts: list = [len(set(k.split(".")[2] for k in state_dict if k.startswith(f"visual.layer{b}"))) for b in
                         [1, 2, 3, 4]]
@@ -491,6 +496,7 @@ def build_model(state_dict: dict):
         vision_patch_size = None
         assert output_width ** 2 + 1 == state_dict["visual.attnpool.positional_embedding"].shape[0]
         image_resolution = output_width * 32
+        torch.cuda.empty_cache()
 
     embed_dim = state_dict["text_projection"].shape[1]
     context_length = state_dict["positional_embedding"].shape[0]
@@ -498,18 +504,19 @@ def build_model(state_dict: dict):
     transformer_width = state_dict["ln_final.weight"].shape[0]
     transformer_heads = transformer_width // 64
     transformer_layers = len(set(k.split(".")[2] for k in state_dict if k.startswith(f"transformer.resblocks")))
-
+    torch.cuda.empty_cache()
     model = CLIP(
         embed_dim,
         image_resolution, vision_layers, vision_width, vision_patch_size,
         context_length, vocab_size, transformer_width, transformer_heads, transformer_layers
     )
-
+    torch.cuda.empty_cache()
     for key in ["input_resolution", "context_length", "vocab_size"]:
         if key in state_dict:
             del state_dict[key]
-
+    torch.cuda.empty_cache()
     model.load_state_dict(state_dict)
     for p in model.parameters():
         p.data = p.data.float()
+    torch.cuda.empty_cache()
     return model.eval()
