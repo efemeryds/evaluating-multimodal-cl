@@ -120,7 +120,7 @@ def eval_single_dataset(image_classifier, feature_extractor, Autoencoder_list, d
     # print(f"Top-5 accuracy: {top5:.2f}")
 
 
-def evaluate(image_classifier, feature_extractor, Autoencoder_list, args, val_preprocess):
+def evaluate_moe(image_classifier, feature_extractor, Autoencoder_list, args, val_preprocess):
     if args.eval_datasets is None:
         return
     for i, dataset_name in enumerate(args.eval_datasets):
