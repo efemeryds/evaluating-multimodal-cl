@@ -8,8 +8,8 @@ def parse_arguments():
 
     # hyper parameters
     parser.add_argument("--model", type=str, default="ViT-B/16")
-    parser.add_argument("--batch-size", type=int, default=32)
-    parser.add_argument("--batch-size-eval", type=int, default=64)
+    parser.add_argument("--batch-size", type=int, default=8)
+    parser.add_argument("--batch-size-eval", type=int, default=16)
     parser.add_argument("--lr", type=float, default=0.001, help="Learning rate.")
     parser.add_argument("--wd", type=float, default=0.0, help="Weight decay")
     parser.add_argument("--ls", type=float, default=0.0, help="Label smoothing.")

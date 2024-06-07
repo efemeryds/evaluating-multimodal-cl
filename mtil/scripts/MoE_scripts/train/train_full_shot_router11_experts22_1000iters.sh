@@ -4,20 +4,20 @@ set -v
 set -e
 set -x
 # 1.frozen_path 2. exp_no
-exp_no=withFrozen_22experts_1000epoch_11
+exp_no=frozen_22_exp_and_1000_epoch_11
 GPU=0
 # chooser_dataset=(TinyImagenet Aircraft Caltech101 CIFAR100 DTD EuroSAT Flowers Food MNIST OxfordPet StanfordCars SUN397)
 chooser_dataset=(Aircraft Caltech101 CIFAR100 DTD EuroSAT Flowers Food MNIST OxfordPet StanfordCars SUN397)
 dataset=(Aircraft Caltech101 CIFAR100 DTD EuroSAT Flowers Food MNIST OxfordPet StanfordCars SUN397)
 lr=(5e-3 1e-3 5e-3 1e-3 1e-4 1e-3 1e-3 1e-4 1e-3 1e-3 1e-3)
 chooser=(Aircraft_autochooser Caltech101_autochooser CIFAR100_autochooser DTD_autochooser EuroSAT_autochooser Flowers_autochooser Food_autochooser MNIST_autochooser OxfordPet_autochooser StanfordCars_autochooser SUN397_autochooser)
-threshold=(655e-4 655e-4 655e-4 655e-4 655e-4 655e-4 655e-4 655e-4 655e-4 655e-4 655e-4 655e-4)  # 手动设置
+threshold=(655e-4 655e-4 655e-4 655e-4 655e-4 655e-4 655e-4 655e-4 655e-4 655e-4 655e-4 655e-4)
 num=22 # experts num
-frozen_path=frozen_list_experts_1000epoch
+frozen_path=/net/tscratch/people/plgalicjamonika/frozen_folder
 
 # test model_ckpt_path
-model_ckpt_path=ckpt/exp_${exp_no}
-
+model_ckpt_path=/net/tscratch/people/plgalicjamonika/moe_checkpoints/exp_${exp_no}
+data_path=/net/tscratch/people/plgalicjamonika/data
 # train
 
 # train chooser of DDAS
@@ -27,8 +27,8 @@ CUDA_VISIBLE_DEVICES=${GPU} python -m src.main_moe \
     --train-dataset=${chooser_dataset[j]} \
     --iterations 1000 \
     --method finetune \
-    --save ckpt/exp_${exp_no} \
-    --data-location /home/alicja/data \
+    --save ${model_ckpt_path} \
+    --data-location ${data_path} \
     --task_id ${j} \
     --is_train \
     --train_chooser
@@ -42,9 +42,9 @@ for ((i = 1; i < ${#chooser_dataset[@]}; i++)); do
         --ls 0.2 \
         --method finetune \
         --iterations 300 \
-        --save ckpt/exp_${exp_no} \
-        --load ckpt/exp_${exp_no}/${dataset_pre}_autochooser.pth \
-        --data-location /home/alicja/data \
+        --save ${model_ckpt_path} \
+        --load ${model_ckpt_path}/${dataset_pre}_autochooser.pth \
+        --data-location ${data_path} \
         --is_train \
         --task_id ${i} \
         --train_chooser
@@ -59,8 +59,8 @@ CUDA_VISIBLE_DEVICES=${GPU} python -m src.main_moe \
     --ls 0.2 \
     --iterations 1000 \
     --method finetune \
-    --save ckpt/exp_${exp_no} \
-    --data-location home/alicja/data \
+    --save ${model_ckpt_path} \
+    --data-location ${data_path} \
     --ffn_adapt_where AdapterDoubleEncoder\
     --ffn_adapt \
     --task_id ${j} \
@@ -84,9 +84,9 @@ for ((i = 1; i < ${#dataset[@]}; i++)); do
         --ls 0.2 \
         --method finetune \
         --iterations 1000 \
-        --save ckpt/exp_${exp_no} \
-        --load ckpt/exp_${exp_no}/${dataset_pre}.pth \
-        --data-location home/alicja/data \
+        --save ${model_ckpt_path} \
+        --load ${model_ckpt_path}/${dataset_pre}.pth \
+        --data-location ${data_path} \
         --ffn_adapt_where AdapterDoubleEncoder \
         --ffn_adapt \
         --apply_moe \
@@ -110,7 +110,7 @@ for ((j = 0; j < 11; j++)); do
         --eval-datasets=${dataset_cur} \
         --load ${model_ckpt_path}/${dataset[i]}.pth \
         --load_autochooser ${model_ckpt_path}/${chooser[i]}.pth \
-        --data-location home/alicja/data \
+        --data-location ${data_path} \
         --ffn_adapt_where AdapterDoubleEncoder \
         --ffn_adapt \
         --apply_moe \
