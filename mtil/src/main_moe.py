@@ -8,7 +8,7 @@ import csv
 import pandas as pd
 from . import utils
 from .args import parse_arguments
-from .models import evaluate, evaluate_wise_ft, finetune_moe, finetune_icarl, Autoencoder, Alexnet_FE, few_shot_AutoEncoder, \
+from .models import evaluate_moe, evaluate_wise_ft, finetune_moe, finetune_icarl, Autoencoder, Alexnet_FE, few_shot_AutoEncoder, \
     AutoEncoder, few_shot_autoencoder
 from .models.modeling import create_image_classifier
 import torchvision.models as models
@@ -65,7 +65,7 @@ def main(args):
                 args.save, f"clip_zeroshot_{args.train_dataset}.pth"
             )
             utils.torch_save(checkpoint_pth, model)
-        evaluate(model, feature_extractor, Autoencoder_list, args, val_preprocess)
+        evaluate_moe(model, feature_extractor, Autoencoder_list, args, val_preprocess)
 
 
     else:

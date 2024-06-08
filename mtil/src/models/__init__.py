@@ -1,4 +1,5 @@
 from .evaluation import evaluate
+from .evaluation_moe import evaluate_moe
 from .evaluation_fc import evaluate_fc
 from .finetune import finetune
 from .finetune_moe import finetune_moe
