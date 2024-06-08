@@ -30,9 +30,9 @@ def zeroshot_classifier(classnames, templates, model, args):
         for classname in classnames:
             texts = [template(classname) for template in templates]  # format with class
             if torch.cuda.is_available():
-                texts = clip.tokenize(texts).cuda()
+                texts = clip_moe.tokenize(texts).cuda()
             else:
-                texts = clip.tokenize(texts).cpu()
+                texts = clip_moe.tokenize(texts).cpu()
             # tokenize
             if args.non_text == True:
                 class_embeddings = model.encode_text(texts, -1)  # embed with text encoder
