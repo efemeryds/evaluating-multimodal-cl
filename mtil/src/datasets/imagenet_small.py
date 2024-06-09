@@ -32,7 +32,7 @@ from ..templates.openai_imagenet_template import openai_imagenet_template
 class ImageNetSM:
     def __init__(self,
                  preprocess,
-                 location=os.path.expanduser('~/data'),
+                 location=os.path.expanduser("/net/tscratch/people/plgalicjamonika/data"),
                  batch_size=32,
                  num=100,
                  batch_size_eval=32,

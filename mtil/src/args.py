@@ -9,7 +9,7 @@ def parse_arguments():
     # hyper parameters
     parser.add_argument("--model", type=str, default="ViT-B/16")
     parser.add_argument("--batch-size", type=int, default=8)
-    parser.add_argument("--batch-size-eval", type=int, default=128)
+    parser.add_argument("--batch-size-eval", type=int, default=16)
     parser.add_argument("--lr", type=float, default=0.001, help="Learning rate.")
     parser.add_argument("--wd", type=float, default=0.0, help="Weight decay")
     parser.add_argument("--ls", type=float, default=0.0, help="Label smoothing.")
@@ -40,7 +40,7 @@ def parse_arguments():
         choices=["whole", "text", "image", "image-fc", "image-fc-fixed", "fc", "adapter"],
         help="Train mode to use.",
     )
-    parser.add_argument("--data-location", type=str, default="./data")
+    parser.add_argument("--data-location", type=str, default="/net/tscratch/people/plgalicjamonika/data")
     parser.add_argument("--train-dataset", default=None)
     parser.add_argument("--eval-datasets", default=None, type=lambda x: x.split(","))
     parser.add_argument("--text-datasets", default=None, type=lambda x: x.split(","))

@@ -48,7 +48,7 @@ class CIFAR10:
     def __init__(
         self,
         preprocess,
-        location="/home/alicja/data",
+        location="/net/tscratch/people/plgalicjamonika/data",
         batch_size=128,
         num_workers=16,
         classnames=None,
@@ -109,7 +109,7 @@ class CIFAR101:
     def __init__(
         self,
         preprocess,
-        location=os.path.expanduser("/home/alicja/data"),
+        location=os.path.expanduser("/net/tscratch/people/plgalicjamonika/data"),
         batch_size=128,
         num_workers=16,
         classnames=None,
@@ -149,7 +149,7 @@ class CIFAR102:
     def __init__(
         self,
         preprocess,
-        location=os.path.expanduser("~/data"),
+        location=os.path.expanduser("/net/tscratch/people/plgalicjamonika/data"),
         batch_size=32,
         num_workers=16,
         classnames=None,
@@ -202,7 +202,7 @@ class CIFAR100:
     def __init__(
         self,
         preprocess,
-        location="/home/alicja/data",
+        location="/net/tscratch/people/plgalicjamonika/data",
         batch_size=128,
         num_workers=16,
         classnames=None,

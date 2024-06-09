@@ -1,0 +1,18 @@
+#!/bin/bash -l
+
+#SBATCH --job-name=adacontrast_batch_size
+#SBATCH --gpus=1
+#SBATCH --time=48:00:00
+#SBATCH --account=plgttaautopilot-gpu-a100
+#SBATCH --partition=plgrid-gpu-a100
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=40G
+#SBATCH --gres=gpu
+#SBATCH -e /net/tscratch/people/plgalicjamonika/slurm/slurm.%N.%j.err # STDERR
+#SBATCH -o /net/tscratch/people/plgalicjamonika/slurm/slurm.%N.%j.out # STDOUT
+
+module load Miniconda3/4.9.2
+conda activate /net/tscratch/people/plgalicjamonika/conda_envs/MoE_Adapters4CL
+
+bash scripts/ZSCL.sh
+

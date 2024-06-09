@@ -10,7 +10,7 @@ class FMOW:
 
     def __init__(self,
                  preprocess,
-                 location=os.path.expanduser('~/data'),
+                 location=os.path.expanduser("/net/tscratch/people/plgalicjamonika/data"),
                  batch_size=128,
                  num_workers=16,
                  subset='test',

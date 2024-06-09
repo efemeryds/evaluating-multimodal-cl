@@ -4,7 +4,7 @@ set -e
 set -x
 
 exp_no=zscl
-GPU=0
+GPU=0,1
 dataset=(Aircraft Caltech101 CIFAR100 DTD EuroSAT Flowers Food MNIST OxfordPet StanfordCars SUN397)
 lr=(5e-5 1e-5 1e-5 1e-5 1e-5 1e-5 1e-5 5e-5 1e-5 1e-5 1e-5 1e-5)
 
@@ -23,7 +23,7 @@ CUDA_VISIBLE_DEVICES=${GPU} python -m src.main \
     --l2 1 \
     --ref-dataset ImageNet \
     --ref-sentences conceptual_captions \
-    --save ckpt/exp_${exp_no}
+    --save /net/tscratch/people/plgalicjamonika/mm_cl_results/exp_${exp_no}
 
 for ((i = 1; i < ${#dataset[@]}; i++)); do
     dataset_cur=${dataset[i]}
@@ -44,6 +44,6 @@ for ((i = 1; i < ${#dataset[@]}; i++)); do
         --ref-dataset ImageNet \
         --ref-sentences conceptual_captions \
         --iterations 1000 \
-        --save ckpt/exp_${exp_no} \
-        --load ckpt/exp_${exp_no}/${dataset_pre}.pth
+        --save /net/tscratch/people/plgalicjamonika/mm_cl_results/exp_${exp_no} \
+        --load /net/tscratch/people/plgalicjamonika/mm_cl_results/exp_${exp_no}/${dataset_pre}.pth
 done
