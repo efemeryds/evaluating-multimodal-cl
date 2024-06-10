@@ -54,5 +54,5 @@ Both methods play an important role in assessing the performance of CL models:
   transfer performance of CLIP for both
   text and image retrieval on the Flickr30k and MSCOCO datset.
 
-![clip_retrieval_results.png](img%2Fclip_retrieval_results.png)
+![img.png](img.png)
 
