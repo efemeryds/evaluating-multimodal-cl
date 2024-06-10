@@ -8,3 +8,4 @@ from .wiseft import evaluate_wise_ft
 from .icarl import iCaRL as finetune_icarl
 from .AutoEncoder import *
 from .few_shot_AutoEncoder import *
+from .retrieval_evaluation_moe import retrieval_evaluation_moe
