@@ -1,47 +1,18 @@
-import copy
 import os
-from random import random
-import numpy as np
 import clip_moe
 import torch
-import csv
-import pandas as pd
 from . import utils
 from .args import parse_arguments
-from .models import evaluate_moe, evaluate_wise_ft, finetune_moe, finetune_icarl, Autoencoder, Alexnet_FE, few_shot_AutoEncoder, \
-    AutoEncoder, few_shot_autoencoder
-from .models.modeling import create_image_classifier
+from .models import evaluate_moe, finetune_moe, Autoencoder, Alexnet_FE, few_shot_AutoEncoder, AutoEncoder
 import torchvision.models as models
 import torch.nn as nn
-
-
-# def merge(model_0, model_1, alpha=0.95):
-#     key_name = [k for k, v in model_0.named_parameters()]
-#     for i, (param_q, param_k) in enumerate(zip(model_0.parameters(), model_1.parameters())):
-#         param_k.data = param_k.data * alpha + param_q.data * (1 - alpha)
-#     return model_1
-
-
-def write2csv(i, map_v, map_t, existing_data):
-    top_values_v, top_indices_v = torch.topk(map_v, 2)
-    top_values_t, top_indices_t = torch.topk(map_t, 2)
-    map_v_combine = torch.cat((map_v, top_indices_v), dim=0)
-    map_t_combine = torch.cat((map_t, top_indices_t), dim=0)
-    map_v_combine = np.array(map_v_combine)
-    map_t_combine = np.array(map_t_combine)
-    existing_data.iloc[i + 12] = map_v_combine
-    existing_data.iloc[i] = map_t_combine
-    return existing_data
-    # merged_data = pd.concat([existing_data, new_row], ignore_index=True)
-    # existing_data = existing_data.append(new_row, ignore_index=True)
 
 
 def main(args):
     utils.seed_all(args.seed)
 
     assert args.train_mode in ["whole", "text", "image", "adapter"]
-    if args.eval_only:  # 测试阶段
-        # load clip model
+    if args.eval_only:
         model, _, val_preprocess = clip_moe.load(args.model, jit=False, args=args)
         if args.load:  #
             utils.torch_load(model, args.load)
@@ -51,22 +22,21 @@ def main(args):
                 feature_extractor = Alexnet_FE(pretrained_alexnet).cuda()
             else:
                 feature_extractor = Alexnet_FE(pretrained_alexnet).cpu()
-            Autoencoder_list = nn.ModuleList()
+            autoencoder_list = nn.ModuleList()
             for i in range(args.task_num + 1):  # more for zero-shot chosen  / few or full shot share the code
                 model_autoencoder = Autoencoder(256 * 13 * 13)
-                Autoencoder_list.append(model_autoencoder)
-            utils.torch_load(Autoencoder_list, args.load_autochooser)
+                autoencoder_list.append(model_autoencoder)
+            utils.torch_load(autoencoder_list, args.load_autochooser)
             if torch.cuda.is_available():
-                Autoencoder_list = Autoencoder_list.cuda()
+                autoencoder_list = autoencoder_list.cuda()
             else:
-                Autoencoder_list = Autoencoder_list.cpu()
+                autoencoder_list = autoencoder_list.cpu()
         elif args.save:  # None
             checkpoint_pth = os.path.join(
                 args.save, f"clip_zeroshot_{args.train_dataset}.pth"
             )
             utils.torch_save(checkpoint_pth, model)
-        evaluate_moe(model, feature_extractor, Autoencoder_list, args, val_preprocess)
-
+        evaluate_moe(model, feature_extractor, autoencoder_list, args, val_preprocess)
 
     else:
         if args.train_chooser:
