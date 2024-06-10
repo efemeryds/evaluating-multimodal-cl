@@ -11,16 +11,16 @@
 ## Evaluation of continual learning models:
 
 1. ### **Retrieval evaluation**
-    2. assesses how well the model can retrieve relevant items
-    3. the purpose is to measure the model’s ability to understand and relate multimodal data (like image-to-text or
-       text-to-image retrieval) and to evaluate how well the model has learned to map images and text into a shared
-       embedding space
-    3. process:
-        4. **image-to-text retrieval**: given an image, retrieve the most relevant text descriptions
-        5. **text-to-image retrieval**: given a text description, retrieve the most relevant images
-        6. the performance is usually measured using metrics like Recall@K, mean reciprocal rank (MRR), and precision
-    4. objective:
-        5. focuses on the model’s ability to retrieve relevant data within the same modality
+   2. assesses how well the model can retrieve relevant items
+   3. the purpose is to measure the model’s ability to understand and relate multimodal data (like image-to-text or
+      text-to-image retrieval) and to evaluate how well the model has learned to map images and text into a shared
+      embedding space
+   3. process:
+      4. **image-to-text retrieval**: given an image, retrieve the most relevant text descriptions
+      5. **text-to-image retrieval**: given a text description, retrieve the most relevant images
+      6. the performance is usually measured using metrics like Recall@K
+   4. objective:
+      5. focuses on the model’s ability to retrieve relevant data within the same modality
 2. ### **Transfer evaluation**
     3. measures how well the model can adapt its learned representations to new tasks or datasets
     4. the purpose is to assess the generalization capability of the model’s representations to new and diverse tasks
@@ -30,7 +30,7 @@
     8. objective:
         9. focuses on the model’s ability to transfer its learned representations to new, often task-specific contexts
 
-Both methods play their role in assessing performance of CL models:
+Both methods play an important role in assessing the performance of CL models:
 
 - retrieval evaluation helps in understanding how well the model retains and uses its multimodal embedding space over
   time
