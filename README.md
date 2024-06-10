@@ -11,30 +11,33 @@
 ## Evaluation of continual learning models:
 
 1. ### **Retrieval evaluation**
-   2. assesses how well the model can retrieve relevant items
-   3. the purpose is to measure the model’s ability to understand and relate multimodal data (like image-to-text or
-      text-to-image retrieval) and to evaluate how well the model has learned to map images and text into a shared
-      embedding space
-   3. process:
-      4. **image-to-text retrieval**: given an image, retrieve the most relevant text descriptions
-      5. **text-to-image retrieval**: given a text description, retrieve the most relevant images
-      6. the performance is usually measured using metrics like Recall@K
-   4. objective:
-      5. focuses on the model’s ability to retrieve relevant data within the same modality
+   2. Assesses how well the model can retrieve relevant items
+   3. The purpose is:
+      - to measure the model’s *ability to understand and relate multimodal data* (like image-to-text or
+      text-to-image retrieval)
+      - and to evaluate how well the model has learned to *map images and text into a shared
+      embedding space*
+   5. Process:
+      - **image-to-text retrieval:** given an image, retrieve the most relevant text descriptions
+      - **text-to-image retrieval:** given a text description, retrieve the most relevant images
+      - the performance is usually measured using metrics like **Recall@K**
+   6. Objective:
+      - model’s ability to retrieve relevant data within the same modality
 2. ### **Transfer evaluation**
-    3. measures how well the model can adapt its learned representations to new tasks or datasets
-    4. the purpose is to assess the generalization capability of the model’s representations to new and diverse tasks
-    5. process:
-        6. fine-tune the pre-trained model on a new dataset or task like classification
-        7. evaluate the performance on the new task using task-specific metrics like accuracy
-    8. objective:
-        9. focuses on the model’s ability to transfer its learned representations to new, often task-specific contexts
+    3. Measures how well the model can adapt its learned representations to new tasks or datasets
+    4. The purpose is to
+       - assess the *generalization capability* of the model’s representations to new and diverse tasks
+    6. Process:
+        - **fine-tune the pre-trained model** on a new dataset or task like classification
+        - evaluate the performance on the new task using task-specific metrics like accuracy
+    8. Objective:
+        - model’s ability to transfer its learned representations to new, often task-specific contexts
 
 Both methods play an important role in assessing the performance of CL models:
 
-- retrieval evaluation helps in understanding how well the model retains and uses its multimodal embedding space over
-  time
-- transfer evaluation helps in assessing the adaptability and robustness of the model’s learned features when applied to
+- **Retrieval evaluation** helps in understanding **how well the model retains and uses its multimodal embedding space over
+  time**
+- **Transfer evaluation** helps in assessing **the adaptability and robustness of the model’s learned features** when applied to
   new and varied tasks, providing insights into the model's ability to generalize and prevent catastrophic forgetting
 
 ## Evaluation done so far
@@ -55,4 +58,7 @@ Both methods play an important role in assessing the performance of CL models:
   text and image retrieval on the Flickr30k and MSCOCO datset.
 
 ![img.png](img.png)
+
+- Retrieval evaluation - TODO
+
 
