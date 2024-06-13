@@ -7,8 +7,26 @@ import torch.nn.functional as F
 from .AutoEncoder import encoder_criterion
 
 
-def retrieval_evaluation_moe():
+def retrieval_evaluation_moe(image_classifier, feature_extractor, autoencoder_list, args, val_preprocess):
+    if args.eval_datasets is None:
+        return
+    for i, dataset_name in enumerate(args.eval_datasets):
+        print("Evaluating on", dataset_name)
+        dataset_class = getattr(datasets, dataset_name)
+        dataset = dataset_class(
+            val_preprocess,
+            location=args.data_location,
+            batch_size=args.batch_size,
+            batch_size_eval=args.batch_size_eval,
+        )
+        retrieve_evaluation_of_single_dataset(image_classifier, feature_extractor, autoencoder_list, dataset, args)
+
+
+def retrieve_evaluation_of_single_dataset(image_classifier, feature_extractor, autoencoder_list, dataset, args):
+
+
     pass
+
 
 
 def accuracy(output, target, topk=(1,)):

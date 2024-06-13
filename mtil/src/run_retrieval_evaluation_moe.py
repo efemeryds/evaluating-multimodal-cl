@@ -1,5 +1,4 @@
 import os
-import numpy as np
 import clip_moe
 import torch
 from . import utils
@@ -14,7 +13,7 @@ def main(args):
 
     if args.eval_only:
         model, _, val_preprocess = clip_moe.load(args.model, jit=False, args=args)
-        if args.load:  #
+        if args.load:
             utils.torch_load(model, args.load)
         if args.load_autochooser and args.autorouter is True:
             pretrained_alexnet = models.alexnet(pretrained=True)
