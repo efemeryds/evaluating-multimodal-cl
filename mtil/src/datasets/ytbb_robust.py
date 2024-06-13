@@ -222,7 +222,7 @@ def create_pmk_score(predictions_by_key, anchor_labels, pmk_frames):
     score_info["incorrect_anchors"] = sorted(
         set(anchor_is_correct.keys()) - correct_anchors)
 
-    score_info["l_infs"] = []  # TODO
+    score_info["l_infs"] = []
     return pmk_accuracy, score_info
 
 

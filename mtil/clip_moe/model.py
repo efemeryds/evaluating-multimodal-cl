@@ -13,6 +13,7 @@ from collections import Counter
 
 val_task_id = None
 
+
 class SparseDispatcher(object):
     """Helper for implementing a mixture of experts.
     The purpose of this class is to create input minibatches for the
@@ -109,7 +110,6 @@ class SparseDispatcher(object):
         if multiply_by_gates:
             stitched = stitched.mul(self._nonzero_gates)  # weight
 
-
         zeros = torch.zeros(self._gates.size(0), expert_out[-1].size(1), device=stitched.device)
         # combine samples that have been processed by the same k experts
 
@@ -125,7 +125,6 @@ class SparseDispatcher(object):
         """
         # split nonzero gates for each expert
         return torch.split(self._nonzero_gates, self._part_sizes, dim=0)
-
 
 
 class Bottleneck(nn.Module):
@@ -286,7 +285,7 @@ class QuickGELU(nn.Module):
 
 class ResidualAttentionBlock(nn.Module):
     def __init__(self, d_model: int, n_head: int, attn_mask: torch.Tensor = None,
-                 adapter_flag = False, args=None, text_or_image=None, i=None):
+                 adapter_flag=False, args=None, text_or_image=None, i=None):
         super().__init__()
 
         self.attn = nn.MultiheadAttention(d_model, n_head)
@@ -300,7 +299,6 @@ class ResidualAttentionBlock(nn.Module):
         self.ln_3 = LayerNorm(d_model)
         self.attn_mask = attn_mask
 
-
         self.layer = i
         self.register_buffer("mean", torch.tensor([0.0]))
         self.register_buffer("std", torch.tensor([1.0]))
@@ -313,16 +311,16 @@ class ResidualAttentionBlock(nn.Module):
         self.noisy_gating = True
         self.is_train = args.is_train
         self.top_k = args.topk
-        self.experts_num = args.experts_num # e = 22
-        self.router_num = 1 # n = 1
+        self.experts_num = args.experts_num  # e = 22
+        self.router_num = 1  # n = 1
         self.ffn_adapt = args.ffn_adapt
         self.text_or_image = text_or_image
         if text_or_image == 'text':
-            print('text transformer')
-            self.choose_map_text = torch.zeros([ self.experts_num])  # experts使用频率记录表
+            print('ResidualAttentionBlock: text transformer')
+            self.choose_map_text = torch.zeros([self.experts_num])  # experts
         else:
-            print('image transformer')
-            self.choose_map_image = torch.zeros([ self.experts_num])  # experts使用频率记录表
+            print('ResidualAttentionBlock: image transformer')
+            self.choose_map_image = torch.zeros([self.experts_num])  # experts
         self.ffn_option = args.ffn_option
         self.ffn_num = args.ffn_num
         self.autorouter = args.autorouter
@@ -330,13 +328,15 @@ class ResidualAttentionBlock(nn.Module):
         self.adaptmlp_list = nn.ModuleList()
         if self.ffn_adapt and self.adapter_flag:
             if self.apply_moe == True:
-                if self.task_id>-1: # router>1
+                if self.task_id > -1:  # router>1
                     self.router_list = nn.ParameterList()
                     self.w_noise_list = nn.ParameterList()
-                    for i in range(11): # Task number
-                        self.router_list.append(nn.Parameter(torch.zeros(d_model, self.experts_num), requires_grad=True))
-                        self.w_noise_list.append(nn.Parameter(torch.zeros(d_model, self.experts_num), requires_grad=True))
-                    for i in range(self.experts_num):  #  Expert number
+                    for i in range(11):  # Task number
+                        self.router_list.append(
+                            nn.Parameter(torch.zeros(d_model, self.experts_num), requires_grad=True))
+                        self.w_noise_list.append(
+                            nn.Parameter(torch.zeros(d_model, self.experts_num), requires_grad=True))
+                    for i in range(self.experts_num):  # Expert number
                         self.adaptmlp = Adapter(d_model=d_model, dropout=0.1, bottleneck=self.ffn_num,
                                                 init_option='lora',
                                                 adapter_scalar=0.1,
@@ -360,11 +360,9 @@ class ResidualAttentionBlock(nn.Module):
                                         adapter_layernorm_option='none',
                                         )
 
-
     def attention(self, x: torch.Tensor):
         self.attn_mask = self.attn_mask.to(dtype=x.dtype, device=x.device) if self.attn_mask is not None else None
         return self.attn(x, x, x, need_weights=False, attn_mask=self.attn_mask)[0]
-
 
     def cv_squared(self, x):
         """The squared coefficient of variation of a sample.
@@ -381,7 +379,7 @@ class ResidualAttentionBlock(nn.Module):
 
         if x.shape[0] == 1:
             return torch.tensor([0], device=x.device, dtype=x.dtype)
-        return x.float().var() / (x.float().mean()**2 + eps)
+        return x.float().var() / (x.float().mean() ** 2 + eps)
 
     def _gates_to_load(self, gates):
         """Compute the true load per expert, given the gates.
@@ -421,8 +419,8 @@ class ResidualAttentionBlock(nn.Module):
         threshold_if_out = torch.unsqueeze(torch.gather(top_values_flat, 0, threshold_positions_if_out), 1)
         normal = Normal(self.mean, self.std)
 
-        prob_if_in = normal.cdf((clean_values - threshold_if_in)/noise_stddev)
-        prob_if_out = normal.cdf((clean_values - threshold_if_out)/noise_stddev)
+        prob_if_in = normal.cdf((clean_values - threshold_if_in) / noise_stddev)
+        prob_if_out = normal.cdf((clean_values - threshold_if_out) / noise_stddev)
         prob = torch.where(is_in, prob_if_in, prob_if_out)
         return prob
 
@@ -459,7 +457,6 @@ class ResidualAttentionBlock(nn.Module):
             load = self._gates_to_load(gates)
         return gates, load
 
-
     def forward(self, x: torch.Tensor):
 
         x = x + self.attention(self.ln_1(x))
@@ -468,46 +465,47 @@ class ResidualAttentionBlock(nn.Module):
             # true
             if self.apply_moe == True:
                 if self.task_id > -1:
-                    if self.autorouter == True and val_task_id==-1:
+                    if self.autorouter == True and val_task_id == -1:
                         x = x + self.mlp(self.ln_2(x))
                         return x  # zero-shot
-                    x_re = x.permute(1, 0, 2)[:,0,:]
+                    x_re = x.permute(1, 0, 2)[:, 0, :]
                     if val_task_id != None and self.autorouter == True:
                         gates, load = self.noisy_top_k_gating(x_re, self.is_train, self.router_list[val_task_id],
-                                                         self.w_noise_list[val_task_id])
+                                                              self.w_noise_list[val_task_id])
                     else:
                         gates, load = self.noisy_top_k_gating(x_re, self.is_train, self.router_list[self.task_id],
-                                                          self.w_noise_list[self.task_id])
+                                                              self.w_noise_list[self.task_id])
                     importance = gates.sum(0)
                     loss = self.cv_squared(importance) + self.cv_squared(load)
-                    loss *= 1e-2 # TODO
+                    loss *= 1e-2
 
                     ###
                     nonzero_indices = torch.nonzero(gates)
                     counter = Counter(nonzero_indices[:, 1].tolist())
                     for number, count in counter.items():
                         if self.text_or_image == 'text':
-                            self.choose_map_text[ number] = self.choose_map_text[number] + count
+                            self.choose_map_text[number] = self.choose_map_text[number] + count
                         else:
                             self.choose_map_image[number] = self.choose_map_image[number] + count
-
 
                     dispatcher = SparseDispatcher(self.experts_num, gates)
                     expert_inputs = dispatcher.dispatch(x.permute(1, 0, 2).view(x.shape[1], -1))
 
                     expert_outputs = [self.adaptmlp_list[i](expert_inputs[i].view(expert_inputs[i].shape[0],
-                                        x.shape[0],x.shape[2]).to(x), add_residual=False) for i in range(self.experts_num)]  # 11个experts 一个router
+                                                                                  x.shape[0], x.shape[2]).to(x),
+                                                            add_residual=False) for i in
+                                      range(self.experts_num)]  # 11个experts 一个router
 
                     i = 0
                     while i < len(expert_outputs):
-                        if expert_outputs[i].shape[0] == 0 :
+                        if expert_outputs[i].shape[0] == 0:
                             expert_outputs.pop(i)
                         else:
-                            expert_outputs[i] = expert_outputs[i].view(expert_outputs[i].shape[0],-1)
+                            expert_outputs[i] = expert_outputs[i].view(expert_outputs[i].shape[0], -1)
                             i += 1
 
                     y = dispatcher.combine(expert_outputs)
-                    y = y.view(x.shape[1],x.shape[0],x.shape[2])
+                    y = y.view(x.shape[1], x.shape[0], x.shape[2])
                     x = x + self.mlp(self.ln_2(x)) + y.permute(1, 0, 2)
                 else:
                     x_re = x.permute(1, 0, 2)[:, 0, :]
@@ -517,7 +515,9 @@ class ResidualAttentionBlock(nn.Module):
                     dispatcher = SparseDispatcher(self.experts_num, gates)
                     expert_inputs = dispatcher.dispatch(x.permute(1, 0, 2).view(x.shape[1], -1))  #
                     expert_outputs = [self.adaptmlp_list[i](expert_inputs[i].view(expert_inputs[i].shape[0],
-                                x.shape[0], x.shape[2]).to(x), add_residual=False) for i in range(self.experts_num)]  # 11 experts 1 router
+                                                                                  x.shape[0], x.shape[2]).to(x),
+                                                            add_residual=False) for i in
+                                      range(self.experts_num)]  # 11 experts 1 router
                     i = 0
                     while i < len(expert_outputs):
                         if expert_outputs[i].shape[0] == 0:
@@ -540,19 +540,23 @@ class ResidualAttentionBlock(nn.Module):
 
 
 class Transformer(nn.Module):
-    def __init__(self, width: int, layers: int, heads: int, attn_mask: torch.Tensor = None, adapter_flag=True, args = None, text_or_image=None):
+    def __init__(self, width: int, layers: int, heads: int, attn_mask: torch.Tensor = None, adapter_flag=True,
+                 args=None, text_or_image=None):
         super().__init__()
         self.width = width
         self.layers = layers
         self.adapter_flag = adapter_flag
-        self.resblocks = nn.Sequential(*[ResidualAttentionBlock(width, heads, attn_mask, adapter_flag, args, text_or_image, i) for i in range(layers)])
+        self.resblocks = nn.Sequential(
+            *[ResidualAttentionBlock(width, heads, attn_mask, adapter_flag, args, text_or_image, i) for i in
+              range(layers)])
 
     def forward(self, x: torch.Tensor):
         return self.resblocks(x)
 
 
 class VisualTransformer(nn.Module):
-    def __init__(self, input_resolution: int, patch_size: int, width: int, layers: int, heads: int, output_dim: int, args, text_or_image=None):
+    def __init__(self, input_resolution: int, patch_size: int, width: int, layers: int, heads: int, output_dim: int,
+                 args, text_or_image=None):
         super().__init__()
         self.input_resolution = input_resolution
         self.output_dim = output_dim
@@ -609,7 +613,7 @@ class CLIP(nn.Module):
                  transformer_heads: int,
                  transformer_layers: int,
                  baseline=False,
-                 args = None
+                 args=None
                  ):
         super().__init__()
         self.baseline = baseline
@@ -635,11 +639,10 @@ class CLIP(nn.Module):
                 heads=vision_heads,
                 output_dim=embed_dim,
                 text_or_image='image',
-                args = args
+                args=args
             )
 
-
-        if self.args.ffn_adapt_where=="AdapterDoubleEncoder":
+        if self.args.ffn_adapt_where == "AdapterDoubleEncoder":
             adapter_flag = True
         else:
             adapter_flag = False
@@ -724,7 +727,6 @@ class CLIP(nn.Module):
         x = x.permute(1, 0, 2)  # LND -> NLD
         x = self.ln_final(x).type(self.dtype)
 
-
         # take features from the eot embedding (eot_token is the highest number in each sequence)
         x = x[torch.arange(x.shape[0]), text.argmax(dim=-1)] @ self.text_projection
 
@@ -746,7 +748,6 @@ class CLIP(nn.Module):
         logits_per_image = logit_scale * image_features @ text_features.t()
         logits_per_text = logits_per_image.t()
         return logits_per_image, logits_per_text
-
 
 
 def convert_weights(model: nn.Module):

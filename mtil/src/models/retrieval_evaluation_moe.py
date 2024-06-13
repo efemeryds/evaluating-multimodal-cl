@@ -1,5 +1,6 @@
 import clip_moe
 import torch
+import torchvision
 from tqdm import tqdm
 from .. import datasets
 from ..datasets.common import get_dataloader, maybe_dictionarize
@@ -7,11 +8,13 @@ import torch.nn.functional as F
 from .AutoEncoder import encoder_criterion
 
 
-def retrieval_evaluation_moe(image_classifier, feature_extractor, autoencoder_list, args, val_preprocess):
+def retrieval_evaluation_moe(image_classifier: clip_moe.model.CLIP, feature_extractor,
+                             autoencoder_list: torch.nn.modules.container.ModuleList, args,
+                             val_preprocess: torchvision.transforms.transforms.Compose) -> None:
     if args.eval_datasets is None:
         return
     for i, dataset_name in enumerate(args.eval_datasets):
-        print("Evaluating on", dataset_name)
+        print("Evaluating on: ", dataset_name)
         dataset_class = getattr(datasets, dataset_name)
         dataset = dataset_class(
             val_preprocess,
@@ -19,6 +22,9 @@ def retrieval_evaluation_moe(image_classifier, feature_extractor, autoencoder_li
             batch_size=args.batch_size,
             batch_size_eval=args.batch_size_eval,
         )
+
+        # TODO: Modify this code to work with retrieval evaluation
+
         retrieval_evaluation_of_single_dataset(image_classifier, feature_extractor, autoencoder_list, dataset, args)
 
 
@@ -27,9 +33,18 @@ def retrieval_evaluation_of_single_dataset(image_classifier, feature_extractor, 
     input_key = "images"
     image_enc = None
 
-    # what is this
+    print("Starting autoencoder eval list..")
     autoencoder_list.eval()
+    print("Finishing autoencoder eval list..")
+
+    print("Starting model eval list..")
     model.eval()
+    print("Finishing model eval list..")
+
+    print("dataset.classnames", dataset.classnames)
+
+    print("dataset.templates", dataset.templates)
+
     zeroshot_weights = zeroshot_classifier(
         dataset.classnames, dataset.templates, model, args
     )
@@ -37,10 +52,12 @@ def retrieval_evaluation_of_single_dataset(image_classifier, feature_extractor, 
     dataloader = get_dataloader(
         dataset, is_train=False, args=args, image_encoder=image_enc
     )
+    print("Starting zeroshot eval..")
     top1, top5 = zeroshot_eval(model, feature_extractor, autoencoder_list, dataloader, zeroshot_weights, args)
+    print("Finishing zeroshot eval..")
 
     print(f"Top-1 accuracy: {top1:.2f}")
-    pass
+    return
 
 
 def accuracy(output, target, topk=(1,)):
@@ -88,8 +105,10 @@ def zeroshot_classifier(classnames, templates, model, args):
 @torch.no_grad()
 def zeroshot_eval(model, feature_extractor, autoencoder_list, loader, zeroshot_weights, args):
     top1, top5, n = 0.0, 0.0, 0.0
+    print("loader type", type(loader))
     for i, data in enumerate(tqdm(loader)):
-
+        print("data type", type(data))
+        print("i type", type(i))
         data = maybe_dictionarize(data)
         if torch.cuda.is_available():
             images = data["images"].cuda()
@@ -104,17 +123,21 @@ def zeroshot_eval(model, feature_extractor, autoencoder_list, loader, zeroshot_w
         input_to_ae = input_to_ae
         input_to_ae = F.sigmoid(input_to_ae)  # GT
 
+        # print("input_to_ae", input_to_ae)
         model_autoencoder = autoencoder_list[0]
         outputs = model_autoencoder(input_to_ae)
-        best_l = encoder_criterion(outputs, input_to_ae)
+        # print("outputs", outputs)
+        best_loss = encoder_criterion(outputs, input_to_ae)
+        # print("best l", best_loss)
         best_router = 0
         for i in range(1, 12):
             outputs = autoencoder_list[i](input_to_ae)
-            new_l = encoder_criterion(outputs, input_to_ae)
-            if new_l < best_l:
-                best_l = new_l
+            new_loss = encoder_criterion(outputs, input_to_ae)
+            # print("new loss", new_loss)
+            if new_loss < best_loss:
+                best_loss = new_loss
                 best_router = i
-            if best_l > args.threshold:
+            if best_loss > args.threshold:
                 best_router = 0
         task_id = best_router - 1
         # predict
@@ -123,9 +146,12 @@ def zeroshot_eval(model, feature_extractor, autoencoder_list, loader, zeroshot_w
         logits = 100.0 * image_features @ zeroshot_weights[task_id + 1]
         # [zeroshot_weights]:-1 to 11
         # measure accuracy
+        # print("target", target)
+        # print("logits", logits)
         acc1, acc5 = accuracy(logits, target, topk=(1, 5))
         top1 += acc1
         top5 += acc5
+        # print("images.size(0)", images.size(0))
         n += images.size(0)
 
     top1 = (top1 / n) * 100
@@ -157,7 +183,8 @@ def evaluate_moe(image_classifier, feature_extractor, autoencoder_list, args, va
     if args.eval_datasets is None:
         return
     for i, dataset_name in enumerate(args.eval_datasets):
-        print("Evaluating on", dataset_name)
+        print("Evaluating on: ", dataset_name)
+        print("Eval datasets: ", args.eval_datasets)
         dataset_class = getattr(datasets, dataset_name)
         dataset = dataset_class(
             val_preprocess,

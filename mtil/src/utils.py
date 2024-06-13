@@ -51,7 +51,7 @@ def torch_save(classifier, save_path):
     #     pickle.dump(classifier.cpu(), f)
 
 
-def torch_load(classifier, save_path, device=None):
+def torch_load(classifier, save_path: str, device=None):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     checkpoint = torch.load(save_path, map_location=device)
     missing_keys, unexpected_keys = classifier.load_state_dict(
@@ -60,9 +60,7 @@ def torch_load(classifier, save_path, device=None):
     if len(missing_keys) > 0 or len(unexpected_keys) > 0:
         print("Missing keys:", missing_keys)
         print("Unexpected keys:", unexpected_keys)
-    print("Checkpoint loaded from", save_path)
-    # with open(save_path, 'rb') as f:
-    #     classifier = pickle.load(f)
+    print("Checkpoint loaded from: ", save_path)
 
     if device is not None:
         classifier = classifier.to(device)

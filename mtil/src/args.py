@@ -24,6 +24,7 @@ def parse_arguments():
     parser.add_argument("--loss-interval", type=int, default=1000)
     parser.add_argument("--eval-every-epoch", action="store_true")
     parser.add_argument("--eval-only", action="store_true")
+    parser.add_argument("--retrieval", action="store_true")
 
     # exp setting
     parser.add_argument(
