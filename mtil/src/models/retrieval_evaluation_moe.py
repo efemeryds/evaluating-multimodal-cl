@@ -19,14 +19,28 @@ def retrieval_evaluation_moe(image_classifier, feature_extractor, autoencoder_li
             batch_size=args.batch_size,
             batch_size_eval=args.batch_size_eval,
         )
-        retrieve_evaluation_of_single_dataset(image_classifier, feature_extractor, autoencoder_list, dataset, args)
+        retrieval_evaluation_of_single_dataset(image_classifier, feature_extractor, autoencoder_list, dataset, args)
 
 
-def retrieve_evaluation_of_single_dataset(image_classifier, feature_extractor, autoencoder_list, dataset, args):
+def retrieval_evaluation_of_single_dataset(image_classifier, feature_extractor, autoencoder_list, dataset, args):
+    model = image_classifier
+    input_key = "images"
+    image_enc = None
 
+    # what is this
+    autoencoder_list.eval()
+    model.eval()
+    zeroshot_weights = zeroshot_classifier(
+        dataset.classnames, dataset.templates, model, args
+    )
 
+    dataloader = get_dataloader(
+        dataset, is_train=False, args=args, image_encoder=image_enc
+    )
+    top1, top5 = zeroshot_eval(model, feature_extractor, autoencoder_list, dataloader, zeroshot_weights, args)
+
+    print(f"Top-1 accuracy: {top1:.2f}")
     pass
-
 
 
 def accuracy(output, target, topk=(1,)):
@@ -72,7 +86,7 @@ def zeroshot_classifier(classnames, templates, model, args):
 
 
 @torch.no_grad()
-def zeroshot_eval(model, feature_extractor, Autoencoder_list, loader, zeroshot_weights, args):
+def zeroshot_eval(model, feature_extractor, autoencoder_list, loader, zeroshot_weights, args):
     top1, top5, n = 0.0, 0.0, 0.0
     for i, data in enumerate(tqdm(loader)):
 
@@ -90,12 +104,12 @@ def zeroshot_eval(model, feature_extractor, Autoencoder_list, loader, zeroshot_w
         input_to_ae = input_to_ae
         input_to_ae = F.sigmoid(input_to_ae)  # GT
 
-        model_autoencoder = Autoencoder_list[0]
+        model_autoencoder = autoencoder_list[0]
         outputs = model_autoencoder(input_to_ae)
         best_l = encoder_criterion(outputs, input_to_ae)
         best_router = 0
         for i in range(1, 12):
-            outputs = Autoencoder_list[i](input_to_ae)
+            outputs = autoencoder_list[i](input_to_ae)
             new_l = encoder_criterion(outputs, input_to_ae)
             if new_l < best_l:
                 best_l = new_l
@@ -119,12 +133,12 @@ def zeroshot_eval(model, feature_extractor, Autoencoder_list, loader, zeroshot_w
     return top1, top5
 
 
-def eval_single_dataset(image_classifier, feature_extractor, Autoencoder_list, dataset, args):
+def eval_single_dataset(image_classifier, feature_extractor, autoencoder_list, dataset, args):
     model = image_classifier
     input_key = "images"
     image_enc = None
 
-    Autoencoder_list.eval()
+    autoencoder_list.eval()
     model.eval()
     zeroshot_weights = zeroshot_classifier(
         dataset.classnames, dataset.templates, model, args
@@ -133,13 +147,13 @@ def eval_single_dataset(image_classifier, feature_extractor, Autoencoder_list, d
     dataloader = get_dataloader(
         dataset, is_train=False, args=args, image_encoder=image_enc
     )
-    top1, top5 = zeroshot_eval(model, feature_extractor, Autoencoder_list, dataloader, zeroshot_weights, args)
+    top1, top5 = zeroshot_eval(model, feature_extractor, autoencoder_list, dataloader, zeroshot_weights, args)
 
     print(f"Top-1 accuracy: {top1:.2f}")
     # print(f"Top-5 accuracy: {top5:.2f}")
 
 
-def evaluate_moe(image_classifier, feature_extractor, Autoencoder_list, args, val_preprocess):
+def evaluate_moe(image_classifier, feature_extractor, autoencoder_list, args, val_preprocess):
     if args.eval_datasets is None:
         return
     for i, dataset_name in enumerate(args.eval_datasets):
@@ -151,4 +165,4 @@ def evaluate_moe(image_classifier, feature_extractor, Autoencoder_list, args, va
             batch_size=args.batch_size,
             batch_size_eval=args.batch_size_eval,
         )
-        eval_single_dataset(image_classifier, feature_extractor, Autoencoder_list, dataset, args)
+        eval_single_dataset(image_classifier, feature_extractor, autoencoder_list, dataset, args)

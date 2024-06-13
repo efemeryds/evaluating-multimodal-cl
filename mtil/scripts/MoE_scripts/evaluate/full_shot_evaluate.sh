@@ -18,7 +18,7 @@ for ((j = 0; j < 11; j++)); do
   for ((i = 0; i < ${#dataset[@]}; i++)); do
     dataset_cur=${dataset[j]}
 
-    CUDA_VISIBLE_DEVICES=${GPU} python -m src.evaluate_and_retrieve --eval-only \
+    CUDA_VISIBLE_DEVICES=${GPU} python -m src.retrieval_moe --eval-only \
         --eval-datasets=${dataset_cur} \
         --load ${model_ckpt_path}/${dataset[i]}.pth \
         --load_autochooser ${model_ckpt_path}/${chooser[i]}.pth \
