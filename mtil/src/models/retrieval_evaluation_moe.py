@@ -1,11 +1,18 @@
 import clip_moe
 import torch
+import os
+from torch.utils.data import default_collate
+import torch.utils.data
 import torchvision
+import torchvision.transforms as transforms
 from tqdm import tqdm
 from .. import datasets
 from ..datasets.common import get_dataloader, maybe_dictionarize
 import torch.nn.functional as F
 from .AutoEncoder import encoder_criterion
+from .zeroshot_retrieval_laion_ai import evaluate
+from clip_moe.tokenizer import SimpleTokenizer
+from ..datasets import multilingual_mscoco
 
 
 def retrieval_evaluation_moe(image_classifier: clip_moe.model.CLIP, feature_extractor,
@@ -14,16 +21,25 @@ def retrieval_evaluation_moe(image_classifier: clip_moe.model.CLIP, feature_extr
     if args.eval_datasets is None:
         return
     for i, dataset_name in enumerate(args.eval_datasets):
-        print("Evaluating on: ", dataset_name)
-        dataset_class = getattr(datasets, dataset_name)
-        dataset = dataset_class(
-            val_preprocess,
-            location=args.data_location,
-            batch_size=args.batch_size,
-            batch_size_eval=args.batch_size_eval,
-        )
+        root = "/home/alicja/repositories/multi-modal-continual-learning/mtil/tmp_data"
+        language = "en"
+        annotation_file = os.path.join(root, multilingual_mscoco.OUTPUT_FILENAME_TEMPLATE.format(language))
+        if not os.path.exists(annotation_file):
+            multilingual_mscoco.create_annotation_file(root, language)
 
-        # TODO: Modify this code to work with retrieval evaluation
+        dataset = multilingual_mscoco.Multilingual_MSCOCO(root=root, ann_file=annotation_file, transform=val_preprocess)
+
+        print("Evaluating on: ", dataset_name)
+
+        dataset_class = getattr(datasets, dataset_name)
+        # dataset = dataset_class(
+        #     val_preprocess,
+        #     location=args.data_location,
+        #     batch_size=args.batch_size,
+        #     batch_size_eval=args.batch_size_eval,
+        # )
+        #dataset = dataset_class(val_preprocess,
+         #                       ann_file="/home/alicja/repositories/multi-modal-continual-learning/mtil/tmp_data/multilingual_mscoco_captions-en.json")
 
         retrieval_evaluation_of_single_dataset(image_classifier, feature_extractor, autoencoder_list, dataset, args)
 
@@ -33,30 +49,120 @@ def retrieval_evaluation_of_single_dataset(image_classifier, feature_extractor, 
     input_key = "images"
     image_enc = None
 
-    print("Starting autoencoder eval list..")
     autoencoder_list.eval()
-    print("Finishing autoencoder eval list..")
-
-    print("Starting model eval list..")
     model.eval()
-    print("Finishing model eval list..")
+    # zeroshot_weights = zeroshot_classifier(
+    #     dataset.classnames, dataset.templates, model, args
+    # )
 
-    print("dataset.classnames", dataset.classnames)
+    # dataloader = get_dataloader(
+    #     dataset, is_train=False, args=args, image_encoder=image_enc
+    # )
 
-    print("dataset.templates", dataset.templates)
+    # transform = transforms.ToTensor()
 
-    zeroshot_weights = zeroshot_classifier(
-        dataset.classnames, dataset.templates, model, args
+    def image_captions_collate_fn(batch):
+        transposed = list(zip(*batch))
+        print(type(transposed))
+        # imgs = default_collate(transposed)
+        # texts = transposed[1]
+        imgs = transposed[0]
+        texts = transposed[1]
+        # Apply the default collate function to images (this converts them to tensors)
+        imgs = default_collate(imgs)
+
+        # Return images and texts as separate entities
+        return imgs, texts
+        # return imgs, texts
+
+    # print(dataset)
+
+    collate_fn = image_captions_collate_fn(dataset)
+
+    dataloader = torch.utils.data.DataLoader(
+        dataset, batch_size=8,
+        shuffle=False, num_workers=4
     )
 
-    dataloader = get_dataloader(
-        dataset, is_train=False, args=args, image_encoder=image_enc
-    )
     print("Starting zeroshot eval..")
-    top1, top5 = zeroshot_eval(model, feature_extractor, autoencoder_list, dataloader, zeroshot_weights, args)
+    # top1, top5 = zeroshot_eval(model, feature_extractor, autoencoder_list, dataloader, zeroshot_weights, args)
+
+    device = 'cuda'
+    # TODO: ensure that as in standard evaluation I need to identify a task using autoencoders first
+    zeroshot_retrieval_eval(model, feature_extractor, autoencoder_list, dataloader, args)
+
+    # TODO: use clip benchmark main code and add to readme
+    top1 = ''
+    top5 = ''
+
     print("Finishing zeroshot eval..")
 
     print(f"Top-1 accuracy: {top1:.2f}")
+    return
+
+
+@torch.no_grad()
+def zeroshot_retrieval_eval(model, feature_extractor, autoencoder_list, loader, args):
+    top1, top5, n = 0.0, 0.0, 0.0
+    task_id = 0
+    print("loader type", type(loader))
+    print(loader)
+    # for i, data in enumerate(tqdm(loader)):
+    #     print("data type", type(data))
+    #     print("i type", type(i))
+    #     data = maybe_dictionarize(data)
+    #     if torch.cuda.is_available():
+    #         images = data["images"].cuda()
+    #         target = data["labels"].cuda()
+    #     else:
+    #         images = data["images"].cpu()
+    #         target = data["labels"].cpu()
+    #
+    #     # predict batch image domain:
+    #     input_to_ae = feature_extractor(images)
+    #     input_to_ae = input_to_ae.view(input_to_ae.size(0), -1)
+    #     input_to_ae = input_to_ae
+    #     input_to_ae = F.sigmoid(input_to_ae)  # GT
+    #
+    #     # print("input_to_ae", input_to_ae)
+    #     model_autoencoder = autoencoder_list[0]
+    #     outputs = model_autoencoder(input_to_ae)
+    #     # print("outputs", outputs)
+    #     best_loss = encoder_criterion(outputs, input_to_ae)
+    #     # print("best l", best_loss)
+    #     best_router = 0
+    #     for i in range(1, 12):
+    #         outputs = autoencoder_list[i](input_to_ae)
+    #         new_loss = encoder_criterion(outputs, input_to_ae)
+    #         # print("new loss", new_loss)
+    #         if new_loss < best_loss:
+    #             best_loss = new_loss
+    #             best_router = i
+    #         if best_loss > args.threshold:
+    #             best_router = 0
+    #     task_id = best_router - 1
+    #     # predict
+    #     image_features = model.encode_image(images, task_id)
+    #     image_features /= image_features.norm(dim=-1, keepdim=True)
+    # logits = 100.0 * image_features @ zeroshot_weights[task_id + 1]
+    if torch.cuda.is_available():
+        device = 'cuda'
+    else:
+        device = 'cpu'
+
+    # TODO: update here?
+    metrics = evaluate(model, loader, SimpleTokenizer, device, task_id)
+    metrics.to_csv("metrics.csv")
+
+    # acc1, acc5 = accuracy(logits, target, topk=(1, 5))
+    # top1 += acc1
+    # top5 += acc5
+
+    # n += images.size(0)
+
+    # top1 = (top1 / n) * 100
+    # top5 = (top5 / n) * 100
+    # return top1, top5
     return
 
 
@@ -157,39 +263,3 @@ def zeroshot_eval(model, feature_extractor, autoencoder_list, loader, zeroshot_w
     top1 = (top1 / n) * 100
     top5 = (top5 / n) * 100
     return top1, top5
-
-
-def eval_single_dataset(image_classifier, feature_extractor, autoencoder_list, dataset, args):
-    model = image_classifier
-    input_key = "images"
-    image_enc = None
-
-    autoencoder_list.eval()
-    model.eval()
-    zeroshot_weights = zeroshot_classifier(
-        dataset.classnames, dataset.templates, model, args
-    )
-
-    dataloader = get_dataloader(
-        dataset, is_train=False, args=args, image_encoder=image_enc
-    )
-    top1, top5 = zeroshot_eval(model, feature_extractor, autoencoder_list, dataloader, zeroshot_weights, args)
-
-    print(f"Top-1 accuracy: {top1:.2f}")
-    # print(f"Top-5 accuracy: {top5:.2f}")
-
-
-def evaluate_moe(image_classifier, feature_extractor, autoencoder_list, args, val_preprocess):
-    if args.eval_datasets is None:
-        return
-    for i, dataset_name in enumerate(args.eval_datasets):
-        print("Evaluating on: ", dataset_name)
-        print("Eval datasets: ", args.eval_datasets)
-        dataset_class = getattr(datasets, dataset_name)
-        dataset = dataset_class(
-            val_preprocess,
-            location=args.data_location,
-            batch_size=args.batch_size,
-            batch_size_eval=args.batch_size_eval,
-        )
-        eval_single_dataset(image_classifier, feature_extractor, autoencoder_list, dataset, args)

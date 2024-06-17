@@ -8,19 +8,26 @@ from .cifar10 import CIFAR10 as cifar10, CIFAR100 as cifar100
 from continuum.datasets import TinyImageNet200, ImageFolderDataset
 import sys
 from PIL import Image
+import codecs
+import json
+import os
+from PIL import Image
+from torchvision.datasets import VisionDataset
+
+
 def underline_to_space(s):
     return s.replace("_", " ")
 
 
 class ClassificationDataset:
     def __init__(
-        self,
-        preprocess,
-        location=os.path.expanduser("/net/tscratch/people/plgalicjamonika/data"),
-        batch_size=128,
-        batch_size_eval=None,
-        num_workers=16,
-        append_dataset_name_to_template=False,
+            self,
+            preprocess,
+            location=os.path.expanduser("/net/tscratch/people/plgalicjamonika/data"),
+            batch_size=128,
+            batch_size_eval=None,
+            num_workers=16,
+            append_dataset_name_to_template=False,
     ) -> None:
         self.name = "classification_dataset"
         self.preprocess = preprocess
@@ -76,7 +83,7 @@ class ClassificationDataset:
             generator=torch.Generator().manual_seed(42),
         )
         return train_dataset, test_dataset
-    
+
     @property
     def class_to_idx(self):
         return {v: k for k, v in enumerate(self.classnames)}
@@ -121,7 +128,7 @@ class Caltech101(ClassificationDataset):
         self.classnames = dataset.categories
 
         train_dataset, test_dataset = self.split_dataset(dataset)
-        
+
         self.train_dataset = train_dataset
         self.test_dataset = test_dataset
         self.build_dataloader()
@@ -284,8 +291,6 @@ class MNIST(ClassificationDataset):
         self.templates = [
             lambda c: f'a photo of the number: "{c}".',
         ]
-
-
 
 
 class CIFAR10(ClassificationDataset):
@@ -539,10 +544,10 @@ class StanfordCars(ClassificationDataset):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "stanford cars"
-        print('1',self.location)
+        print('1', self.location)
         self._base_folder = pathlib.Path(self.location) / "stanford_cars"
-        print('2',self._base_folder)
-        print('3',(self._base_folder / "devkit").is_dir())
+        print('2', self._base_folder)
+        print('3', (self._base_folder / "devkit").is_dir())
         self.train_dataset = datasets.StanfordCars(
             self.location, split="train", download=False, transform=self.preprocess
         )
@@ -587,15 +592,16 @@ class SUN397(ClassificationDataset):
             lambda c: f"a photo of the {c}.",
         ]
 
+
 class TinyImagenet(ClassificationDataset):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "TinyImageNet"
         self.train_dataset = TinyImageNet_dataset(
-            self.location+'/tiny-imagenet-200', train=True, transform=self.preprocess
+            self.location + '/tiny-imagenet-200', train=True, transform=self.preprocess
         )
         self.test_dataset = TinyImageNet_dataset(
-            self.location+'/tiny-imagenet-200', train=False, transform=self.preprocess
+            self.location + '/tiny-imagenet-200', train=False, transform=self.preprocess
         )
         self.build_dataloader()
 
@@ -641,12 +647,11 @@ class TinyImageNet_dataset(Dataset):
             num_workers=1,
         )
 
-
     def _create_class_idx_dict_train(self):
         if sys.version_info >= (3, 5):
             classes = [d.name for d in os.scandir(self.train_dir) if d.is_dir()]
         else:
-            classes = [d for d in os.listdir(self.train_dir) if os.path.isdir(os.path.join(train_dir, d))]
+            classes = [d for d in os.listdir(self.train_dir) if os.path.isdir(os.path.join(self.train_dir, d))]
         classes = sorted(classes)
         num_images = 0
         for root, dirs, files in os.walk(self.train_dir):
@@ -664,7 +669,7 @@ class TinyImageNet_dataset(Dataset):
         if sys.version_info >= (3, 5):
             images = [d.name for d in os.scandir(val_image_dir) if d.is_file()]
         else:
-            images = [d for d in os.listdir(val_image_dir) if os.path.isfile(os.path.join(train_dir, d))]
+            images = [d for d in os.listdir(val_image_dir) if os.path.isfile(os.path.join(self.train_dir, d))]
         val_annotations_file = os.path.join(self.val_dir, "val_annotations.txt")
         self.val_img_to_class = {}
         set_of_classes = set()

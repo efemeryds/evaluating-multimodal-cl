@@ -17,7 +17,7 @@ def main(input_arguments):
     if input_arguments.retrieval:
         # loads clip model
         print("Loading clip model...")
-        model, _, val_preprocess = clip_moe.load(input_arguments.model, jit=False, args=input_arguments)
+        model, _, transform = clip_moe.load(input_arguments.model, jit=False, args=input_arguments)
         print("Finished loading clip model..")
         # loads current checkpoint for the evaluation
         if (input_arguments.load_autochooser and input_arguments.autorouter is True) and input_arguments.load:
@@ -41,7 +41,7 @@ def main(input_arguments):
             else:
                 autoencoder_list = autoencoder_list.cpu()
 
-            retrieval_evaluation_moe(model, feature_extractor, autoencoder_list, input_arguments, val_preprocess)
+            retrieval_evaluation_moe(model, feature_extractor, autoencoder_list, input_arguments, transform)
         else:
             return
 

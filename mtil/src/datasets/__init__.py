@@ -18,6 +18,7 @@ from .collections import (
     OxfordPet,
     StanfordCars,
 )
+from .multilingual_mscoco import Multilingual_MSCOCO
 from .fmow import FMOW, FMOWID, FMOWOOD
 
 # ImageNet
@@ -59,6 +60,7 @@ dataset_list = [
     OxfordPet,
     StanfordCars,
     SUN397,
+    Multilingual_MSCOCO
 ]
 
 def show_datasets():
